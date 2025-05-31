@@ -1,30 +1,43 @@
+import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 
-export function isAuthenticated() {
-    const token = localStorage.getItem('token');
-    if (!token) return false;
-    
-    try {
-        const decoded = jwtDecode(token);
-        return decoded.exp > Date.now() / 1000;
-    } catch (error) {
-        return false;
-    }
-}
+const API_URL = 'http://localhost:5000/api';
 
-export function logout() {
-    localStorage.removeItem('token');
-    window.location.href = '/login.html';
-}
+export const login = async (username, password) => {
+  try {
+    const response = await axios.post(`${API_URL}/login`, { username, password });
+    const { token } = response.data;
+    localStorage.setItem('token', token);
+    return jwtDecode(token);
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Error al iniciar sesión');
+  }
+};
 
-export function getUserId() {
-    const token = localStorage.getItem('token');
-    if (!token) return null;
-    
-    try {
-        const decoded = jwtDecode(token);
-        return decoded.sub;
-    } catch (error) {
-        return null;
-    }
-}
+export const register = async (username, password) => {
+  try {
+    await axios.post(`${API_URL}/register`, { username, password });
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Error al registrar usuario');
+  }
+};
+
+export const logout = () => {
+  localStorage.removeItem('token');
+};
+
+export const getAuthToken = () => {
+  return localStorage.getItem('token');
+};
+
+export const isAuthenticated = () => {
+  const token = getAuthToken();
+  if (!token) return false;
+  
+  try {
+    const decoded = jwtDecode(token);
+    return decoded.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+};

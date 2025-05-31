@@ -1,102 +1,24 @@
+import axios from 'axios';
+import { getAuthToken } from './auth';
+
 const API_URL = 'http://localhost:5000/api';
 
-export async function login(username, password) {
-    const response = await fetch(`${API_URL}/login`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-    });
-    
-    if (!response.ok) {
-        throw new Error('Error en la autenticación');
-    }
-    
-    const data = await response.json();
-    localStorage.setItem('token', data.token);
-    return data;
-}
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
 
-export async function register(username, password) {
-    const response = await fetch(`${API_URL}/register`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-    });
-    
-    if (!response.ok) {
-        throw new Error('Error en el registro');
-    }
-    
-    return response.json();
-}
+api.interceptors.request.use(config => {
+  const token = getAuthToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
-export async function getGames() {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/games`, {
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        },
-    });
-    
-    if (!response.ok) {
-        throw new Error('Error al obtener los juegos');
-    }
-    
-    return response.json();
-}
-
-export async function createGame(gameData) {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/games`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(gameData),
-    });
-    
-    if (!response.ok) {
-        throw new Error('Error al crear el juego');
-    }
-    
-    return response.json();
-}
-
-export async function updateGame(gameId, gameData) {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/games/${gameId}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(gameData),
-    });
-    
-    if (!response.ok) {
-        throw new Error('Error al actualizar el juego');
-    }
-    
-    return response.json();
-}
-
-export async function deleteGame(gameId) {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/games/${gameId}`, {
-        method: 'DELETE',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        },
-    });
-    
-    if (!response.ok) {
-        throw new Error('Error al eliminar el juego');
-    }
-    
-    return response.json();
-}
+export const getSales = () => api.get('/sales');
+export const createSale = (saleData) => api.post('/sales', saleData);
+export const updateSale = (id, saleData) => api.put(`/sales/${id}`, saleData);
+export const deleteSale = (id) => api.delete(`/sales/${id}`);
